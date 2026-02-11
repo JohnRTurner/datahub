@@ -391,8 +391,14 @@ class SQLAlchemySource(StatefulIngestionSourceBase, TestableSource):
                 "max_overflow", sql_config.profiling.max_workers
             )
 
+    @staticmethod
+    def test_connection(_config_dict: dict) -> TestConnectionReport:
+        raise NotImplementedError("Implemented via test_connection_with_ctx.")
+
     @classmethod
-    def test_connection(cls, config_dict: dict) -> TestConnectionReport:
+    def test_connection_with_ctx(
+        cls, config_dict: dict, ctx: PipelineContext
+    ) -> TestConnectionReport:
         test_report = TestConnectionReport()
         try:
             if config_dict.get("stateful_ingestion", {}).get("enabled", False):
@@ -403,7 +409,7 @@ class SQLAlchemySource(StatefulIngestionSourceBase, TestableSource):
                 }
             source = cast(
                 SQLAlchemySource,
-                cls.create(config_dict, PipelineContext(run_id="test_connection")),
+                cls.create(config_dict, ctx),
             )
             list(source.get_inspectors())
             test_report.basic_connectivity = CapabilityReport(capable=True)

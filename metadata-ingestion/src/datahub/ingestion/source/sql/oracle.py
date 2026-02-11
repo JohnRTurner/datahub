@@ -20,6 +20,7 @@ import datahub.metadata.schema_classes as models
 from datahub.configuration.common import AllowDenyPattern
 from datahub.emitter.mce_builder import make_dataset_urn_with_platform_instance
 from datahub.emitter.mcp import MetadataChangeProposalWrapper
+from datahub.ingestion.api.common import PipelineContext
 from datahub.ingestion.api.decorators import (
     SourceCapability,
     SupportStatus,
@@ -984,7 +985,9 @@ class OracleSource(SQLAlchemySource):
         return cls(config, ctx)
 
     @classmethod
-    def test_connection(cls, config_dict: dict) -> TestConnectionReport:
+    def test_connection_with_ctx(
+        cls, config_dict: dict, ctx: PipelineContext
+    ) -> TestConnectionReport:
         """Test Oracle connection."""
         import os
 
@@ -996,7 +999,7 @@ class OracleSource(SQLAlchemySource):
         if hasattr(oracledb, "defaults"):
             oracledb.defaults.config_dir = ""
 
-        return super().test_connection(config_dict)
+        return super().test_connection_with_ctx(config_dict, ctx)
 
     def get_db_name(self, inspector: Inspector) -> str:
         """

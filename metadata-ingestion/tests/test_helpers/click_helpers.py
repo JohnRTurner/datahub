@@ -13,6 +13,7 @@ telemetry_instance.enabled = False
 
 
 def assert_result_ok(result: Result) -> None:
+    print(result.output)
     if result.exception:
         raise result.exception
     assert result.exit_code == 0

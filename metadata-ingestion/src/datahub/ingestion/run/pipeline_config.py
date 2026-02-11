@@ -6,9 +6,11 @@ import random
 import string
 from typing import Dict, List, Optional
 
-from pydantic import Field, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from datahub.configuration.common import ConfigModel, DynamicTypedConfig, HiddenFromDocs
+from datahub.ingestion.api.common import PipelineContext
+from datahub.ingestion.graph.client import DataHubGraph
 from datahub.ingestion.graph.config import DatahubClientConfig
 from datahub.ingestion.recording.config import RecordingConfig
 from datahub.ingestion.sink.file import FileSinkConfig
@@ -84,15 +86,46 @@ def _generate_run_id(source_type: Optional[str] = None) -> str:
     return f"{source_type}-{current_time}-{random_suffix}"
 
 
-class PipelineConfig(ConfigModel):
+class BasePipelineConfig(BaseModel):
+    """Used by test connection to create a PipelineContext without needing a full recipe.
+
+    Does not inherit from ConfigModel so that extra fields can be ignored.
+    """
+
+    run_id: str = DEFAULT_RUN_ID
+    datahub_api: Optional[DatahubClientConfig] = None
+    pipeline_name: Optional[str] = None
+
+    def make_graph(
+        self, client_mode: DatahubClientConfig.ClientMode
+    ) -> Optional[DataHubGraph]:
+        if self.datahub_api:
+            self.datahub_api.client_mode = client_mode
+            return DataHubGraph(self.datahub_api)
+        else:
+            return None
+
+    def make_pipeline_ctx(
+        self,
+        graph: Optional[DataHubGraph],
+        dry_run: bool,
+        preview_mode: bool,
+    ) -> PipelineContext:
+        return PipelineContext(
+            run_id=self.run_id,
+            pipeline_name=self.pipeline_name,
+            graph=graph,
+            dry_run=dry_run,
+            preview_mode=preview_mode,
+        )
+
+
+class PipelineConfig(BasePipelineConfig, ConfigModel):
     source: SourceConfig
     sink: Optional[DynamicTypedConfig] = None
     transformers: Optional[List[DynamicTypedConfig]] = None
     flags: HiddenFromDocs[FlagsConfig] = FlagsConfig()
     reporting: List[ReporterConfig] = []
-    run_id: str = DEFAULT_RUN_ID
-    datahub_api: Optional[DatahubClientConfig] = None
-    pipeline_name: Optional[str] = None
     failure_log: FailureLoggingConfig = FailureLoggingConfig()
     recording: Optional[RecordingConfig] = Field(
         default=None,
@@ -128,3 +161,13 @@ class PipelineConfig(ConfigModel):
         if result is None:
             result = self.model_dump()
         return result
+
+    def make_pipeline_ctx(
+        self,
+        graph: Optional[DataHubGraph],
+        dry_run: bool,
+        preview_mode: bool,
+    ) -> PipelineContext:
+        ctx = super().make_pipeline_ctx(graph, dry_run, preview_mode)
+        ctx.pipeline_config = self
+        return ctx

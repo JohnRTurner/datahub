@@ -181,21 +181,14 @@ class Pipeline:
         ):
             self.graph: Optional[DataHubGraph] = None
             with _add_init_error_context("connect to DataHub"):
-                if self.config.datahub_api:
-                    self.config.datahub_api.client_mode = ClientMode.INGESTION
-                    self.graph = exit_stack.enter_context(
-                        DataHubGraph(self.config.datahub_api)
-                    )
+                graph = self.config.make_graph(ClientMode.INGESTION)
+                if graph:
+                    self.graph = exit_stack.enter_context(graph)
                     self.graph.test_connection()
 
             with _add_init_error_context("set up framework context"):
-                self.ctx = PipelineContext(
-                    run_id=self.config.run_id,
-                    graph=self.graph,
-                    pipeline_name=self.config.pipeline_name,
-                    dry_run=dry_run,
-                    preview_mode=preview_mode,
-                    pipeline_config=self.config,
+                self.ctx = self.config.make_pipeline_ctx(
+                    graph=self.graph, dry_run=dry_run, preview_mode=preview_mode
                 )
 
             if self.config.sink is None:
@@ -773,9 +766,12 @@ class Pipeline:
         logger.exception(
             f"Ingestion pipeline threw an uncaught exception: {exc}", stacklevel=2
         )
+        import traceback
+
+        tb = traceback.format_exc()
         self.source.get_report().report_failure(
             title="Pipeline Error",
-            message="Ingestion pipeline raised an unexpected exception!",
+            message="Ingestion pipeline raised an unexpected exception!" + tb,
             exc=exc,
             log=False,
         )

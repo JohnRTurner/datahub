@@ -655,3 +655,9 @@ class TestableSource(Source):
     @abstractmethod
     def test_connection(config_dict: dict) -> TestConnectionReport:
         raise NotImplementedError("This class does not implement this method")
+
+    @classmethod
+    def test_connection_with_ctx(
+        cls, config_dict: dict, _ctx: PipelineContext
+    ) -> TestConnectionReport:
+        return cls.test_connection(config_dict)

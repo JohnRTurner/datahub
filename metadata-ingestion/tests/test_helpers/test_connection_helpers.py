@@ -1,5 +1,6 @@
 from typing import Dict, List, Optional, Type, Union
 
+from datahub.ingestion.api.common import PipelineContext
 from datahub.ingestion.api.source import (
     CapabilityReport,
     SourceCapability,
@@ -11,7 +12,9 @@ from datahub.ingestion.api.source import (
 def run_test_connection(
     source_cls: Type[TestableSource], config_dict: Dict
 ) -> TestConnectionReport:
-    return source_cls.test_connection(config_dict)
+    return source_cls.test_connection_with_ctx(
+        config_dict, PipelineContext("test-run-id")
+    )
 
 
 def assert_basic_connectivity_success(report: TestConnectionReport) -> None:

@@ -22,7 +22,7 @@ from datahub.configuration.common import GraphError
 from datahub.configuration.config_loader import load_config_file
 from datahub.ingestion.graph.client import get_default_graph
 from datahub.ingestion.graph.config import ClientMode
-from datahub.ingestion.run.connection import ConnectionManager
+from datahub.ingestion.run.connection import test_source_connection
 from datahub.ingestion.run.pipeline import Pipeline
 from datahub.masking.bootstrap import initialize_secret_masking
 from datahub.telemetry import telemetry
@@ -481,7 +481,7 @@ def _setup_recording(
 def _test_source_connection(report_to: Optional[str], pipeline_config: dict) -> int:
     connection_report = None
     try:
-        connection_report = ConnectionManager().test_source_connection(pipeline_config)
+        connection_report = test_source_connection(pipeline_config)
         logger.info(connection_report.as_json())
         if report_to and report_to != "datahub":
             with open(report_to, "w") as out_fp:

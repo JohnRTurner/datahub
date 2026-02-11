@@ -766,12 +766,9 @@ class Pipeline:
         logger.exception(
             f"Ingestion pipeline threw an uncaught exception: {exc}", stacklevel=2
         )
-        import traceback
-
-        tb = traceback.format_exc()
         self.source.get_report().report_failure(
             title="Pipeline Error",
-            message="Ingestion pipeline raised an unexpected exception!" + tb,
+            message="Ingestion pipeline raised an unexpected exception!",
             exc=exc,
             log=False,
         )

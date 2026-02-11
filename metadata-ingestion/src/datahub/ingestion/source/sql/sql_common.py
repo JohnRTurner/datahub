@@ -401,12 +401,6 @@ class SQLAlchemySource(StatefulIngestionSourceBase, TestableSource):
     ) -> TestConnectionReport:
         test_report = TestConnectionReport()
         try:
-            if config_dict.get("stateful_ingestion", {}).get("enabled", False):
-                # Disable stateful ingestion for test connection
-                config_dict = {
-                    **config_dict,
-                    "stateful_ingestion": {"enabled": False},
-                }
             source = cast(
                 SQLAlchemySource,
                 cls.create(config_dict, ctx),

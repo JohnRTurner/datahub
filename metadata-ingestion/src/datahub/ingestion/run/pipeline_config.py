@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field, model_validator
 from datahub.configuration.common import ConfigModel, DynamicTypedConfig, HiddenFromDocs
 from datahub.ingestion.api.common import PipelineContext
 from datahub.ingestion.graph.client import DataHubGraph
-from datahub.ingestion.graph.config import DatahubClientConfig
+from datahub.ingestion.graph.config import ClientMode, DatahubClientConfig
 from datahub.ingestion.recording.config import RecordingConfig
 from datahub.ingestion.sink.file import FileSinkConfig
 
@@ -96,9 +96,7 @@ class BasePipelineConfig(BaseModel):
     datahub_api: Optional[DatahubClientConfig] = None
     pipeline_name: Optional[str] = None
 
-    def make_graph(
-        self, client_mode: DatahubClientConfig.ClientMode
-    ) -> Optional[DataHubGraph]:
+    def make_graph(self, client_mode: ClientMode) -> Optional[DataHubGraph]:
         if self.datahub_api:
             self.datahub_api.client_mode = client_mode
             return DataHubGraph(self.datahub_api)
